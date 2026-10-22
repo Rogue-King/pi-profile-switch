@@ -48,6 +48,8 @@ export class SwitchError extends Error {
 }
 
 export interface SwitchDeps {
+	/** SDK hosts can isolate remembered selection and overlays per session. */
+	stateDir?: string;
 	/** The active generated runtime dir (the running Pi's agent dir). */
 	runtimeDir: string;
 	/** The user's real agent dir (from the launch plan; trust, catalogs,
@@ -204,7 +206,7 @@ export async function switchProfile(
 	if (overlay === undefined && options?.reloadCurrent === true && current.profile !== undefined) {
 		const currentPlan = await readLaunchPlanFile(deps.runtimeDir);
 		if (currentPlan?.agentDir !== undefined) {
-			const stateDir = currentPlan.source === "project" ? path.join(deps.cwd, ".pi") : getGlobalStateDir(currentPlan.agentDir);
+			const stateDir = deps.stateDir ?? (currentPlan.source === "project" ? path.join(deps.cwd, ".pi") : getGlobalStateDir(currentPlan.agentDir));
 			overlay = (await new RuntimeStateStore(stateDir).read()).overlay ?? null;
 		}
 	}

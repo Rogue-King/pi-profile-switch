@@ -126,6 +126,7 @@ const MCP_GATEWAYS = [
 /** Applies the plan carried by the runtime dir's pi-profile.json. */
 export async function applyLaunchPlan(input: {
 	runtimeDir: string;
+	stateDir?: string;
 	cwd: string;
 	/** The session_start reason ("startup" | "reload" | "new" | ...). */
 	reason: string;
@@ -251,7 +252,7 @@ export async function applyLaunchPlan(input: {
 
 	// --- persistence (post-reload only) ---
 	if (plan.persistSelection === true && input.reason === "reload" && plan.agentDir !== undefined) {
-		const stateDir = plan.source === "project" ? path.join(input.cwd, ".pi") : getGlobalStateDir(plan.agentDir);
+		const stateDir = input.stateDir ?? (plan.source === "project" ? path.join(input.cwd, ".pi") : getGlobalStateDir(plan.agentDir));
 		// Merge: the overlay belongs to the overlay commands, not to this
 		// write. A switch (clearOverlay) explicitly drops it.
 		await new RuntimeStateStore(stateDir).update({

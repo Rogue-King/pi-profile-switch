@@ -34,7 +34,7 @@ async function currentStateTarget(
 	if (plan === undefined) {
 		throw new SwitchError("no active profile — nothing to overlay");
 	}
-	const stateDir = plan.source === "project" ? path.join(deps.cwd, ".pi") : getGlobalStateDir(plan.agentDir);
+	const stateDir = deps.stateDir ?? (plan.source === "project" ? path.join(deps.cwd, ".pi") : getGlobalStateDir(plan.agentDir));
 	if (stateDir === undefined) {
 		throw new SwitchError("the launch plan carries no real agent dir — cannot locate the state file");
 	}

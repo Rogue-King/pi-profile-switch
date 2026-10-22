@@ -131,8 +131,14 @@ function reportActivationFailure(
 	process.stderr.write(`pi-profile: ${message}\n`);
 }
 
-export default function piProfileExtension(pi: ExtensionAPI): void {
-	const runtimeDir = process.env.PI_CODING_AGENT_DIR;
+export interface ProfileExtensionOptions {
+	runtimeDir?: string;
+	stateDir?: string;
+	onChange?: () => Promise<void>;
+}
+
+export default function piProfileExtension(pi: ExtensionAPI, options: ProfileExtensionOptions = {}): void {
+	const runtimeDir = options.runtimeDir ?? process.env.PI_CODING_AGENT_DIR;
 	if (runtimeDir === undefined) return;
 
 	let pendingSummary: string | undefined;
@@ -146,6 +152,7 @@ export default function piProfileExtension(pi: ExtensionAPI): void {
 		setProfileStatus(ctx.ui, plan?.profile);
 		const result = await applyLaunchPlan({
 			runtimeDir,
+			stateDir: options.stateDir,
 			cwd: ctx.cwd,
 			reason: event.reason,
 			surface: {
@@ -158,6 +165,7 @@ export default function piProfileExtension(pi: ExtensionAPI): void {
 			},
 		});
 		pendingSummary = result.summary;
+		await options.onChange?.();
 		if (event.reason === "startup") {
 			void startStartupNotices(noticeSurface);
 		}
@@ -190,6 +198,7 @@ export default function piProfileExtension(pi: ExtensionAPI): void {
 				}
 			};
 			const notifySwitchWarnings = async (result: { profile: string; warnings: string[] }): Promise<void> => {
+				await options.onChange?.();
 				// switchProfile returns final-stage structured messages only, not
 				// superseded resolution messages. Successful reload delivered these
 				// persisted issues; unmatched plain/legacy warnings remain observable.
@@ -216,6 +225,7 @@ export default function piProfileExtension(pi: ExtensionAPI): void {
 				}
 				const deps: SwitchDeps = {
 					runtimeDir,
+					stateDir: options.stateDir,
 					realAgentDir: plan.agentDir,
 					cwd: ctx.cwd,
 					getAllTools: () => pi.getAllTools(),
@@ -263,7 +273,7 @@ export default function piProfileExtension(pi: ExtensionAPI): void {
 				// selector; status renders via a displayed custom message.
 				if (subcommand === "status") {
 					const { projectTrusted } = await readTrustInputs({ agentDir: plan.agentDir, cwd: ctx.cwd });
-					const stateDir = plan.source === "project" ? path.join(ctx.cwd, ".pi") : getGlobalStateDir(plan.agentDir);
+					const stateDir = options.stateDir ?? (plan.source === "project" ? path.join(ctx.cwd, ".pi") : getGlobalStateDir(plan.agentDir));
 					const state = await new RuntimeStateStore(stateDir).read();
 					const mcpDiscovery = await loadMergedMcpServers(
 						plan.agentDir,

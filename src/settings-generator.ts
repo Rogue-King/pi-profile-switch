@@ -95,6 +95,8 @@ export const MANAGED_INSTANCE_FILES = new Set([
 	"mcp.json",
 	"APPEND_SYSTEM.md",
 	"pi-profile.json",
+	// SDK hosts keep per-session selections here; never mirror or adopt the shared state file.
+	"pi-profile-state.json",
 	"trust.json",
 	"pid",
 	"extensions",
